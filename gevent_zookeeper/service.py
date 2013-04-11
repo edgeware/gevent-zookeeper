@@ -17,6 +17,7 @@
 import json
 import os.path
 import zookeeper
+import gevent
 
 
 class ServiceInstance(object):
@@ -62,17 +63,30 @@ class Registry(object):
         self.framework = framework
         self.base_path = base_path
         self.cls = cls
-        self.instances = {}
+        self._instances = {}
+
 
     def start(self):
-        self.monitor = self.framework.monitor().children().store_into(
-            self.instances, self.cls.from_data).for_path(self.base_path)
-        
+        # self.monitor = self.framework.monitor().children().store_into(
+        #     self.instances, self.cls.from_data).for_path(self.base_path)
+        def reregister(event):
+            print "reregister instances %s" % str(event)
+            if event.state_name == "expired":
+                while not self.framework.client.connected:
+                    gevent.sleep(1.0)
+                    print "sleeping..."
+                for inst in self._instances.values():
+                    print "instance", inst
+                    self.register(inst)
+        self.framework._add_session_event_listener(reregister)
+        print "Registry start"
+
     def close(self):
         self.monitor.close()
 
     def register(self, inst):
         """Register an instance."""
+        self._instances[inst.id] = inst
         self.framework.create().with_data(inst.to_data()).as_ephemeral(
             ).for_path(os.path.join(self.base_path, inst.id))
 
@@ -80,6 +94,7 @@ class Registry(object):
         """Unregister an instance."""
         self.framework.delete().for_path(os.path.join(self.base_path,
             inst.id))
+        del self._instances[inst.id]
 
 
 class ServiceInstanceRegistry(Registry):

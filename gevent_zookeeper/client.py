@@ -225,7 +225,7 @@ class ZookeeperClient(object):
         os.write(self._pipe_write, '\0')
 
     def add_session_event_listener(self, listener):
-        self_session_event_listeners.append(listener)
+        self._session_event_listeners.append(listener)
 
     def __del__(self):
         # attempt to clean up the FD from the gevent hub
@@ -297,7 +297,7 @@ class ZookeeperClient(object):
         self._event.cancel()
         os.close(self._pipe_read)
         os.close(self._pipe_write)
-        
+
     def add_auth_async(self, scheme, credential):
         async_result = self._new_async_result()
 
@@ -410,7 +410,7 @@ class ZookeeperClient(object):
         def callback(handle, code):
             self._queue_result(async_result, code != zookeeper.OK,
                 err_to_exception(code) if code != zookeeper.OK else code)
-            
+
         zookeeper.adelete(self._handle, path, version, callback)
         return async_result
 

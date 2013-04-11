@@ -16,7 +16,7 @@ import os
 import os.path
 import zookeeper
 
-from gevent_zookeeper.client import ZookeeperClient
+from gevent_zookeeper.client import ZookeeperClient, SessionEventListener
 from gevent_zookeeper.monitor import (DataMonitor, ChildrenMonitor,
                                       CallbackMonitorListener)
 
@@ -237,9 +237,17 @@ class ZookeeperFramework(object):
 
     """
 
-    def __init__(self, hosts, timeout, chroot=None):
+    def __init__(self, hosts, timeout, chroot=None, session_listener=None):
         self.client = ZookeeperClient(hosts, timeout)
         self.chroot = chroot
+        if session_listener:
+            self.add_session_event_listener(session_listener)
+
+    def add_session_event_listener(self, listener):
+        class Listener(SessionEventListener):
+            def session_event(self, event):
+                listener(event)
+        self.client.add_session_event_listener(Listener())
 
     def _adjust_path(self, path):
         """Adjust C{path} so that it will possibly be put inside the
