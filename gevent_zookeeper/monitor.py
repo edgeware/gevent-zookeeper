@@ -50,7 +50,9 @@ class DataMonitor(object):
                     self.started.set(None)
                 gevent.sleep(1)
                 continue
-            except (zookeeper.ConnectionLossException), err:
+            except (zookeeper.ConnectionLossException,
+                    zookeeper.SessionExpiredException,
+                    zookeeper.InvalidStateException), err:
                 if not self.started.ready():
                     self.started.set_exception(err)
                     break
@@ -65,7 +67,7 @@ class DataMonitor(object):
                     self.started.set_exception(err)
                     break
                 raise
-                
+
             self.callback(data, *self.args, **self.kwargs)
 
             if not self.started.ready():
@@ -145,7 +147,9 @@ class ChildrenMonitor(object):
                     self.started.set(None)
                 gevent.sleep(1)
                 continue
-            except (zookeeper.ConnectionLossException), err:
+            except (zookeeper.ConnectionLossException,
+                    zookeeper.SessionExpiredException,
+                    zookeeper.InvalidStateException) as err:
                 if not self.started.ready():
                     self.started.set_exception(err)
                     break
@@ -164,7 +168,8 @@ class ChildrenMonitor(object):
             for child in children:
                 if not child in self.stats:
                     try:
-                        data, stat = self.client.get(os.path.join(self.path, child))
+                        data, stat = self.client.get(os.path.join(self.path,
+                                                                  child))
                     except zookeeper.NoNodeException:
                         print "race condition while getting", os.path.join(
                             self.path, child)
@@ -174,7 +179,8 @@ class ChildrenMonitor(object):
                         self.stats[child] = stat
                 else:
                     try:
-                        data, stat = self.client.get(os.path.join(self.path, child))
+                        data, stat = self.client.get(os.path.join(self.path,
+                                                                  child))
                     except zookeeper.NoNodeException:
                         print "race condition while getting", os.path.join(
                             self.path, child)

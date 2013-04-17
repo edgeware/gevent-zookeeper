@@ -67,7 +67,7 @@ class Registry(object):
     def start(self):
         self.monitor = self.framework.monitor().children().store_into(
             self.instances, self.cls.from_data).for_path(self.base_path)
-        
+
     def close(self):
         self.monitor.close()
 
