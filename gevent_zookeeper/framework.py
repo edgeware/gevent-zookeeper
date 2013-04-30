@@ -365,7 +365,8 @@ class ZookeeperFramework(object):
         for i in range(2, len(components)):
             path = '/' + os.path.join(*components[1:i])
             try:
-                self.client.create(path, value, acl, flags)
+                if not self.client.exists(path):
+                    self.client.create(path, value, acl, flags)
             except zookeeper.NodeExistsException:
                 pass
 
