@@ -390,18 +390,18 @@ class ZookeeperClient(object):
 
         def callback(handle, code, stat):
             if code == zookeeper.NONODE:
-                self._queue_result(async_result, False, (False, None),
+                self._queue_result(async_result, False, None,
                     watcher_greenlet)
             else:
                 self._queue_result(async_result, code != zookeeper.OK,
                     err_to_exception(code) if code != zookeeper.OK
-                       else (True, stat), watcher_greenlet)
+                       else stat, watcher_greenlet)
 
         zookeeper.aexists(self._handle, path, watcher_callback, callback)
         return async_result
 
     def exists(self, path, watcher=None):
-        """."""
+        """Return stat of the node if it exists, else None."""
         return self.exists_async(path, watcher).get()
 
     def delete_async(self, path, version=-1):
